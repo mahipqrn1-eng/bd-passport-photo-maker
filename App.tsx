@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { TRANSLATIONS, PASSPORT_WIDTH_MM, PASSPORT_HEIGHT_MM, ASPECT_RATIO } from './constants';
-import { Language, PhotoResult, BlogPost } from './types';
-import { autoProcessPhotoAI } from './services/geminiService';
-import PhotoEditor from './components/PhotoEditor';
-import AdSlot from './components/AdSlot';
-import Logo from './components/Logo';
+import { TRANSLATIONS, PASSPORT_WIDTH_MM, PASSPORT_HEIGHT_MM, ASPECT_RATIO } from './constants.ts';
+import { Language, PhotoResult, BlogPost } from './types.ts';
+import { autoProcessPhotoAI } from './services/geminiService.ts';
+import PhotoEditor from './components/PhotoEditor.tsx';
+import AdSlot from './components/AdSlot.tsx';
+import Logo from './components/Logo.tsx';
 
 type View = 'tool' | 'privacy' | 'terms' | 'about' | 'contact' | 'blog';
 
