@@ -1,0 +1,7 @@
+
+User-agent: *
+Allow: /
+Disallow: /private/
+
+# Sitemap location
+Sitemap: https://bdpassportphoto.ai/sitemap.xml

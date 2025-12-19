@@ -1,0 +1,7 @@
+{
+  "name": "BD Passport Photo Maker",
+  "description": "Professional tool for creating Bangladeshi passport-size photos (45x35mm) with AI compliance checking and background removal.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
