@@ -7,17 +7,17 @@ import { GoogleGenAI } from "@google/genai";
 export async function autoProcessPhotoAI(imageBase64: string): Promise<string | null> {
   try {
     // Access the API key exclusively from the environment.
-    // Ensure you have set 'API_KEY' in your hosting dashboard (e.g., Netlify settings).
+    // Ensure you have set 'API_KEY' in your hosting dashboard (e.g., Netlify/Vercel settings).
     const apiKey = process.env.API_KEY;
     
     if (!apiKey) {
-      console.error("Gemini API Error: API_KEY is not defined in the environment.");
+      console.warn("Gemini API Error: API_KEY is not defined in the environment variables.");
       return null;
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: apiKey });
     
-    // Clean base64 data to get raw bytes
+    // Extract base64 raw data
     const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
     
     const imagePart = {
@@ -28,7 +28,7 @@ export async function autoProcessPhotoAI(imageBase64: string): Promise<string | 
     };
 
     const textPart = {
-      text: "Professional task: Remove the background of this portrait and replace it with a solid, pure white color (#FFFFFF). Keep the person and their features exactly as they are. Return ONLY the edited image."
+      text: "Portrait Background Removal Task: Remove the background from this person's photo and replace it with a solid, pure white color (#FFFFFF). Maintain the person's features exactly as they are. Return only the edited image."
     };
 
     const response = await ai.models.generateContent({
@@ -37,24 +37,22 @@ export async function autoProcessPhotoAI(imageBase64: string): Promise<string | 
     });
 
     if (!response.candidates || response.candidates.length === 0) {
-      throw new Error("No response candidates received from Gemini.");
+      throw new Error("No response candidates from Gemini.");
     }
 
-    // Iterate through all parts to find the image part as per SDK guidelines
+    // Find and return the image part from the response
     const parts = response.candidates[0].content.parts;
     for (const part of parts) {
       if (part.inlineData) {
         return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-      } else if (part.text) {
-        console.log("Model response text:", part.text);
       }
     }
 
-    console.warn("AI response did not contain an image part.");
+    console.warn("AI processing finished but no image data was found in response.");
     return null;
 
   } catch (err) {
-    console.error("Gemini AI Processing failed:", err);
+    console.error("Gemini AI Background Removal Failed:", err);
     return null;
   }
 }
