@@ -1,55 +1,63 @@
 import { GoogleGenAI } from "@google/genai";
 
 /**
- * Directly calls the Google Gemini API from the browser to process images.
- * Note: When calling from the frontend, the API Key is visible in network requests.
- * Standard practice is to restrict the key to your domain in the Google Cloud Console.
+ * Processes a passport photo using the Gemini 2.5 Flash Image model.
+ * Performs background removal and replaces it with pure white (#FFFFFF).
  */
 export async function autoProcessPhotoAI(imageBase64: string): Promise<string | null> {
   try {
-    // Safety check for API key to prevent app crash
-    const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : (window as any).API_KEY;
+    // Access the API key from the environment. 
+    // We initialize here to ensure the most current key is used.
+    const apiKey = process.env.API_KEY;
     
     if (!apiKey) {
-      console.error("API Key is missing. Please configure process.env.API_KEY.");
+      console.error("Gemini API Error: API_KEY is not defined in the environment.");
       return null;
     }
 
     const ai = new GoogleGenAI({ apiKey });
     
+    // Clean base64 data by removing potential data URL prefixes
     const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
     
-    // Using gemini-2.5-flash-image for high-quality background removal and lighting adjustment
+    // Prepare the multi-part request as per Gemini 2.5 standards
+    const imagePart = {
+      inlineData: {
+        data: base64Data,
+        mimeType: 'image/jpeg'
+      }
+    };
+
+    const textPart = {
+      text: "Professional passport photo processing: Remove the background and replace it with a solid, pure white (#FFFFFF) background. Ensure the subject's face is clearly visible with neutral lighting. Return only the edited image."
+    };
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              data: base64Data,
-              mimeType: 'image/jpeg',
-            },
-          },
-          {
-            text: 'Professional passport photo task: Carefully remove the background and replace it with solid pure white (#FFFFFF). Ensure the subject face lighting is balanced and neutral for official document use. Output ONLY the resulting image.',
-          },
-        ],
-      },
+      contents: { parts: [imagePart, textPart] }
     });
 
-    const candidate = response.candidates?.[0];
-    if (candidate?.content?.parts) {
-      for (const part of candidate.content.parts) {
-        if (part.inlineData) {
-          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        }
+    // Check if the model returned content successfully
+    if (!response || !response.candidates || response.candidates.length === 0) {
+      console.error("Gemini API Error: No response candidates returned.");
+      return null;
+    }
+
+    const parts = response.candidates[0].content.parts;
+    
+    // Iterate through parts to find the image data
+    for (const part of parts) {
+      if (part.inlineData) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
       }
     }
 
-    console.warn("AI response did not contain image data.");
+    console.warn("Gemini API Warning: Model responded but no image data was found in the parts.");
     return null;
+
   } catch (err) {
-    console.error("Gemini AI Error:", err);
+    console.error("Gemini AI Processing failed:", err);
+    // In case of a 404 or "entity not found", usually implies model or key issues
     return null;
   }
 }
